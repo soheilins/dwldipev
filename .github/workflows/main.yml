@@ -1,0 +1,39 @@
+name: Download and Commit to Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      file_url:
+        description: 'The full URL of the file to download'
+        required: true
+        default: 'link'
+      file_name:
+        description: 'Name to save the file as (e.g., myfile.zip)'
+        required: true
+        default: 'name'
+
+jobs:
+  download-and-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write    # Allows pushing to the repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create downloaded directory
+        run: mkdir -p downloaded
+
+      - name: Download file
+        run: |
+          curl -L -o "downloaded/${{ github.event.inputs.file_name }}" "${{ github.event.inputs.file_url }}"
+          echo "File downloaded. Size:"
+          ls -lh "downloaded/${{ github.event.inputs.file_name }}"
+
+      - name: Commit and push to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "downloaded/${{ github.event.inputs.file_name }}"
+          git commit -m "Add downloaded file: downloaded/${{ github.event.inputs.file_name }}" || echo "No changes to commit"
+          git push
